@@ -105,11 +105,9 @@
     <div class="navbar">
         <a class="nav-item" href="index.html">🏠 HOME</a>
         <a class="nav-item" href="livetv.html">📺 LIVE TV</a>
-        <a class="nav-item" href="movies.html">🎬 MOVIES</a>
         <a class="nav-item" href="videos.html">🎞️ VIDEOS</a>
         <a class="nav-item" href="cartoons.html">🧸 CARTOONS</a>
         <a class="nav-item" href="musics.html">🎵 MUSICS</a>
-        <a class="nav-item" href="adults.html">🔞 ADULTS</a>
     </div>
 
     <!-- HEADER -->
@@ -117,13 +115,7 @@
         <img src="logo-lmtv.png" class="section-logo">
         <h1 class="section-title">MOVIES</h1>
     </div>
-
-    <!-- BACK / NEXT BUTTONS -->
-    <div class="nav-buttons">
-        <button class="btn-nav" onclick="goBack()">⬅ Back</button>
-        <button class="btn-nav" onclick="goForward()">Next ➡</button>
-    </div>
-
+    
     <!-- CONTENT -->
     <div class="movies-container">
 
@@ -134,22 +126,226 @@
     </div>
 
 <script>
-const serverURL = "http://192.168.12.126:5500/MOVIES/";
 
-async function loadFolder(url) {
-    const response = await fetch(url);
-    const text = await response.text();
-    const parser = new DOMParser();
-    const htmlDoc = parser.parseFromString(text, "text/html");
-    const links = [...htmlDoc.querySelectorAll("a")];
-    return links.map(a => a.getAttribute("href")).filter(n => n !== "../");
+const serverURL = "http://192.168.12.126:5500/";
+const rootFolder = "MOVIES/";
+
+const videoExt = ["mp4","mkv","avi","mov","wmv","flv","mp3","wav","ogg","m4a"];
+
+let currentPath = "";
+
+// =====================
+// LOAD FOLDER
+// =====================
+async function loadFolder(url){
+    try{
+        const res = await fetch(url);
+        if(!res.ok) return [];
+
+        const text = await res.text();
+
+        const doc = new DOMParser()
+            .parseFromString(text,"text/html");
+
+        return [...doc.querySelectorAll("a")]
+            .map(a => a.getAttribute("href"))
+            .filter(h => h && h !== "../");
+
+    }catch(e){
+        return [];
+    }
 }
 
-async function loadMovies() {
-    const grid = document.getElementById("moviesGrid");
-    const rootItems = await loadFolder(serverURL);
+// =====================
+// CHECK FILE
+// =====================
+function isMedia(file){
+    return videoExt.some(ext =>
+        file.toLowerCase().endsWith("." + ext)
+    );
+}
 
-    for (const item of rootItems) {
-        const fullPath = serverURL + item;
+function isFolder(item){
+    return item.endsWith("/");
+}
 
-        if (item.endsWith
+// =====================
+// UI CONTAINER (FIXED PANEL)
+// =====================
+function getContainer(){
+    return document.getElementById("moviesGrid");
+}
+
+// =====================
+// LOAD ROOT (FOLDERS ONLY)
+// =====================
+async function showRoot(){
+
+    currentPath = "";
+
+    const container = getContainer();
+    container.innerHTML = "";
+
+    const items = await loadFolder(serverURL + rootFolder);
+
+    items.forEach(item => {
+        if(isFolder(item)){
+            addFolder(container, item);
+        }
+    });
+}
+
+// =====================
+// OPEN FOLDER
+// =====================
+async function openFolder(folder){
+
+    currentPath += folder;
+
+    renderCurrent();
+}
+
+function createFolderCard(name){
+
+    const el = document.createElement("div");
+
+    el.style.padding = "18px";
+    el.style.background = "#1a1f3d";
+    el.style.borderRadius = "12px";
+    el.style.cursor = "pointer";
+    el.style.textAlign = "center";
+    el.style.fontSize = "16px";
+
+    el.innerHTML = "📁 " + name.replace("/","");
+
+    el.onclick = () => openFolder(name);
+
+    return el;
+}
+
+function createFileCard(path, name){
+
+    const el = document.createElement("div");
+
+    el.style.padding = "18px";
+    el.style.background = "#0f1226";
+    el.style.borderRadius = "12px";
+    el.style.cursor = "pointer";
+    el.style.textAlign = "center";
+    el.style.fontSize = "14px";
+
+    el.innerHTML = "🎬 " + decodeURIComponent(name);
+
+    el.onclick = () => {
+
+        const player = document.getElementById("player");
+
+        player.src = serverURL + rootFolder + path;
+        player.load();
+        player.play().catch(()=>{});
+    };
+
+    return el;
+}
+
+// =====================
+// RENDER CURRENT PATH
+// =====================
+async function renderCurrent(){
+
+    const container = getContainer();
+
+    // 🔥 Vide container la
+    container.innerHTML = "";
+
+    // 🔥 Fè fichye yo an kolonn
+    container.className = "folder-list";
+
+    // BACK BUTTON
+    const back = document.createElement("div");
+    back.innerHTML = "⬅ Back";
+    back.style.color = "#00d9ff";
+    back.style.cursor = "pointer";
+    back.style.marginBottom = "10px";
+
+    back.onclick = () => {
+        let parts = currentPath.split("/").filter(Boolean);
+        parts.pop();
+        currentPath = parts.length ? parts.join("/") + "/" : "";
+        renderCurrent();
+    };
+
+    container.appendChild(back);
+
+    // 🔥 Chaje fichye yo
+    const items = await loadFolder(serverURL + rootFolder + currentPath);
+
+    let hasFiles = false;
+
+    items.forEach(item => {
+
+        const full = currentPath + item;
+
+        if(isFolder(item)){
+            addFolder(container, item);
+        }
+
+        else if(isMedia(item)){
+            hasFiles = true;
+            addFile(container, full, item);
+        }
+    });
+
+    // Si pa gen anyen
+    if(!hasFiles && items.length === 0){
+        const empty = document.createElement("div");
+        empty.innerHTML = "📭 Pa gen fichiers";
+        empty.style.opacity = "0.7";
+        container.appendChild(empty);
+    }
+}
+
+// =====================
+// FOLDER CARD
+// =====================
+function addFolder(container, name){
+    const el = document.createElement("div");
+
+    el.className = "movie-card";
+    el.innerHTML = "📁 " + name.replace("/", "");
+    el.style.fontSize = "18px";
+
+    el.onclick = () => openFolder(name);
+
+    container.appendChild(el);
+}
+
+// =====================
+// FILE CARD
+// =====================
+function addFile(container, path, name){
+    const el = document.createElement("div");
+
+    el.className = "movie-card";
+    el.innerHTML = "🎬 " + decodeURIComponent(name);
+    el.style.fontSize = "16px";
+
+    el.onclick = () => {
+        const player = document.getElementById("player");
+        player.src = serverURL + rootFolder + path;
+        player.load();
+        player.play().catch(()=>{});
+    };
+
+    container.appendChild(el);
+}
+
+// =====================
+// START
+// =====================
+showRoot();
+
+</script>
+
+</body>
+</html>

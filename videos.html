@@ -106,22 +106,14 @@
         <a class="nav-item" href="index.html">🏠 HOME</a>
         <a class="nav-item" href="livetv.html">📺 LIVE TV</a>
         <a class="nav-item" href="movies.html">🎬 MOVIES</a>
-        <a class="nav-item" href="videos.html">🎞️ VIDEOS</a>
         <a class="nav-item" href="cartoons.html">🧸 CARTOONS</a>
         <a class="nav-item" href="musics.html">🎵 MUSICS</a>
-        <a class="nav-item" href="adults.html">🔞 ADULTS</a>
     </div>
 
     <!-- HEADER -->
     <div class="section-header">
         <img src="logo-lmtv.png" class="section-logo">
         <h1 class="section-title">VIDEOS</h1>
-    </div>
-
-    <!-- BACK / NEXT BUTTONS -->
-    <div class="nav-buttons">
-        <button class="btn-nav" onclick="goBack()">⬅ Back</button>
-        <button class="btn-nav" onclick="goForward()">Next ➡</button>
     </div>
 
     <!-- CONTENT -->
@@ -136,69 +128,229 @@
     </div>
 
 <script>
-const serverURL = "http://192.168.12.126:5500/VIDEOS/";
 
-// Chaje fichye nan nenpòt folder
-async function loadFolder(url) {
-    const response = await fetch(url);
-    const text = await response.text();
+const serverURL = "http://192.168.12.126:5500/";
+const rootFolder = "VIDEOS/";
 
-    const parser = new DOMParser();
-    const htmlDoc = parser.parseFromString(text, "text/html");
+const videoExt = ["mp4","mkv","avi","mov","wmv","flv","mp3","wav","ogg","m4a"];
 
-    const links = [...htmlDoc.querySelectorAll("a")];
+let currentPath = "";
 
-    return links
-        .map(a => a.getAttribute("href"))
-        .filter(name => name !== "../");
-}
+// =====================
+// LOAD FOLDER
+// =====================
+async function loadFolder(url){
+    try{
+        const res = await fetch(url);
+        if(!res.ok) return [];
 
-async function loadVideos() {
-    const grid = document.getElementById("videosGrid");
+        const text = await res.text();
 
-    const rootItems = await loadFolder(serverURL);
+        const doc = new DOMParser()
+            .parseFromString(text,"text/html");
 
-    for (const item of rootItems) {
-        const fullPath = serverURL + item;
+        return [...doc.querySelectorAll("a")]
+            .map(a => a.getAttribute("href"))
+            .filter(h => h && h !== "../");
 
-        if (item.endsWith("/")) {
-            const subFiles = await loadFolder(fullPath);
-
-            subFiles.forEach(file => {
-                if (isVideo(file)) {
-                    addVideoCard(grid, fullPath + file, file);
-                }
-            });
-
-        } else if (isVideo(item)) {
-            addVideoCard(grid, fullPath, item);
-        }
+    }catch(e){
+        return [];
     }
 }
 
-function isVideo(file) {
-    return (
-        file.endsWith(".mp4") ||
-        file.endsWith(".mkv") ||
-        file.endsWith(".avi") ||
-        file.endsWith(".mov") ||
-        file.endsWith(".wmv") ||
-        file.endsWith(".flv")
+// =====================
+// CHECK FILE
+// =====================
+function isMedia(file){
+    return videoExt.some(ext =>
+        file.toLowerCase().endsWith("." + ext)
     );
 }
 
-function addVideoCard(grid, videoURL, fileName) {
-    const card = document.createElement("div");
-    card.className = "video-card";
+function isFolder(item){
+    return item.endsWith("/");
+}
 
-    card.innerHTML = `
-        <img src="thumbnail.png" style="width:100%; border-radius:8px;">
-        <div class="video-title">${fileName}</div>
-    `;
+// =====================
+// UI CONTAINER (FIXED PANEL)
+// =====================
+function getContainer(){
+    return document.getElementById("videosGrid");
+}
 
-    card.onclick = () => {
-        document.getElementById("player").src = videoURL;
-        document.getElementById("player").play();
+// =====================
+// LOAD ROOT (FOLDERS ONLY)
+// =====================
+async function showRoot(){
+
+    currentPath = "";
+
+    const container = getContainer();
+    container.innerHTML = "";
+
+    const items = await loadFolder(serverURL + rootFolder);
+
+    items.forEach(item => {
+        if(isFolder(item)){
+            addFolder(container, item);
+        }
+    });
+}
+
+// =====================
+// OPEN FOLDER
+// =====================
+async function openFolder(folder){
+
+    currentPath += folder;
+
+    renderCurrent();
+}
+
+function createFolderCard(name){
+
+    const el = document.createElement("div");
+
+    el.style.padding = "18px";
+    el.style.background = "#1a1f3d";
+    el.style.borderRadius = "12px";
+    el.style.cursor = "pointer";
+    el.style.textAlign = "center";
+    el.style.fontSize = "16px";
+
+    el.innerHTML = "📁 " + name.replace("/","");
+
+    el.onclick = () => openFolder(name);
+
+    return el;
+}
+
+function createFileCard(path, name){
+
+    const el = document.createElement("div");
+
+    el.style.padding = "18px";
+    el.style.background = "#0f1226";
+    el.style.borderRadius = "12px";
+    el.style.cursor = "pointer";
+    el.style.textAlign = "center";
+    el.style.fontSize = "14px";
+
+    el.innerHTML = "🎞️ " + decodeURIComponent(name);
+
+    el.onclick = () => {
+
+        const player = document.getElementById("player");
+
+        player.src = serverURL + rootFolder + path;
+        player.load();
+        player.play().catch(()=>{});
     };
 
-    grid.appendChild(card
+    return el;
+}
+
+// =====================
+// RENDER CURRENT PATH
+// =====================
+async function renderCurrent(){
+
+    const container = getContainer();
+
+    // 🔥 Vide container la
+    container.innerHTML = "";
+
+    // 🔥 Fè fichye yo an kolonn
+    container.className = "folder-list";
+
+    // BACK BUTTON
+    const back = document.createElement("div");
+    back.innerHTML = "⬅ Back";
+    back.style.color = "#00d9ff";
+    back.style.cursor = "pointer";
+    back.style.marginBottom = "10px";
+    back.style.fontSize = "18px";
+    back.style.padding = "10px 0";
+
+
+    back.onclick = () => {
+        let parts = currentPath.split("/").filter(Boolean);
+        parts.pop();
+        currentPath = parts.length ? parts.join("/") + "/" : "";
+        renderCurrent();
+    };
+
+    container.appendChild(back);
+
+    // 🔥 Chaje fichye yo
+    const items = await loadFolder(serverURL + rootFolder + currentPath);
+
+    let hasFiles = false;
+
+    items.forEach(item => {
+
+        const full = currentPath + item;
+
+        if(isFolder(item)){
+            addFolder(container, item);
+        }
+
+        else if(isMedia(item)){
+            hasFiles = true;
+            addFile(container, full, item);
+        }
+    });
+
+    // Si pa gen anyen
+    if(!hasFiles && items.length === 0){
+        const empty = document.createElement("div");
+        empty.innerHTML = "📭 Pa gen fichiers";
+        empty.style.opacity = "0.7";
+        container.appendChild(empty);
+    }
+}
+
+// =====================
+// FOLDER CARD
+// =====================
+function addFolder(container, name){
+    const el = document.createElement("div");
+
+    el.className = "video-card";
+    el.innerHTML = "📁 " + name.replace("/", "");
+    el.style.fontSize = "18px";
+
+    el.onclick = () => openFolder(name);
+
+    container.appendChild(el);
+}
+
+// =====================
+// FILE CARD
+// =====================
+function addFile(container, path, name){
+    const el = document.createElement("div");
+
+    el.className = "video-card";
+    el.innerHTML = "🎞️ " + decodeURIComponent(name);
+    el.style.fontSize = "16px";
+
+    el.onclick = () => {
+        const player = document.getElementById("player");
+        player.src = serverURL + rootFolder + path;
+        player.load();
+        player.play().catch(()=>{});
+    };
+
+    container.appendChild(el);
+}
+
+// =====================
+// START
+// =====================
+showRoot();
+
+</script>
+
+</body>
+</html>

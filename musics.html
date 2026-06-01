@@ -107,20 +107,12 @@
         <a class="nav-item" href="movies.html">🎬 MOVIES</a>
         <a class="nav-item" href="videos.html">🎞️ VIDEOS</a>
         <a class="nav-item" href="cartoons.html">🧸 CARTOONS</a>
-        <a class="nav-item" href="musics.html">🎵 MUSICS</a>
-        <a class="nav-item" href="adults.html">🔞 ADULTS</a>
     </div>
 
     <!-- HEADER -->
     <div class="section-header">
         <img src="logo-lmtv.png" class="section-logo">
         <h1 class="section-title">MUSICS</h1>
-    </div>
-
-    <!-- BACK / NEXT BUTTONS -->
-    <div class="nav-buttons">
-        <button class="btn-nav" onclick="goBack()">⬅ Back</button>
-        <button class="btn-nav" onclick="goForward()">Next ➡</button>
     </div>
 
     <!-- CONTENT -->
@@ -135,77 +127,178 @@
     </div>
 
 <script>
-const serverURL = "http://192.168.12.126:5500/MUSICS/";
 
-// Chaje fichye nan nenpòt folder
-async function loadFolder(url) {
-    const response = await fetch(url);
-    const text = await response.text();
+const serverURL = "http://192.168.12.126:5500/";
+const rootFolder = "MUSICS/";
 
-    const parser = new DOMParser();
-    const htmlDoc = parser.parseFromString(text, "text/html");
+const audioExt = ["mp3","ogg","wav","m4a","aac"];
 
-    const links = [...htmlDoc.querySelectorAll("a")];
+let currentPath = "";
 
-    return links
-        .map(a => a.getAttribute("href"))
-        .filter(name => name !== "../");
-}
+// =====================
+// LOAD FOLDER
+// =====================
+async function loadFolder(url){
+    try{
+        const res = await fetch(url);
+        if(!res.ok) return [];
 
-async function loadMusics() {
-    const grid = document.getElementById("musicsGrid");
+        const text = await res.text();
 
-    const rootItems = await loadFolder(serverURL);
+        const doc = new DOMParser()
+            .parseFromString(text,"text/html");
 
-    for (const item of rootItems) {
-        const fullPath = serverURL + item;
+        return [...doc.querySelectorAll("a")]
+            .map(a => a.getAttribute("href"))
+            .filter(h => h && h !== "../");
 
-        if (item.endsWith("/")) {
-            const subFiles = await loadFolder(fullPath);
-
-            subFiles.forEach(file => {
-                if (isAudio(file)) {
-                    addMusicCard(grid, fullPath + file, file);
-                }
-            });
-
-        } else if (isAudio(item)) {
-            addMusicCard(grid, fullPath, item);
-        }
+    }catch(e){
+        return [];
     }
 }
 
-function isAudio(file) {
-    return (
-        file.endsWith(".mp3") ||
-        file.endsWith(".wav") ||
-        file.endsWith(".aac") ||
-        file.endsWith(".ogg") ||
-        file.endsWith(".m4a")
+function isAudio(file){
+    return audioExt.some(ext =>
+        file.toLowerCase().endsWith("." + ext)
     );
 }
 
-function addMusicCard(grid, audioURL, fileName) {
-    const card = document.createElement("div");
-    card.className = "music-card";
-
-    card.innerHTML = `
-        <img src="music-thumbnail.png" style="width:100%; border-radius:8px;">
-        <div class="music-title">${fileName}</div>
-    `;
-
-    card.onclick = () => {
-        document.getElementById("player").src = audioURL;
-        document.getElementById("player").play();
-    };
-
-    grid.appendChild(card);
+function isFolder(item){
+    return item.endsWith("/");
 }
 
-function goBack() { history.back(); }
-function goForward() { history.forward(); }
+function getContainer(){
+    return document.getElementById("musicsGrid");
+}
 
-loadMusics();
+// =====================
+// SHOW ROOT
+// =====================
+async function showRoot(){
+
+    currentPath = "";
+
+    const container = getContainer();
+    container.innerHTML = "";
+
+    const items = await loadFolder(serverURL + rootFolder);
+
+    items.forEach(item => {
+        if(isFolder(item)){
+            addFolder(container, item);
+        }
+    });
+}
+
+// =====================
+// OPEN FOLDER
+// =====================
+async function openFolder(folder){
+
+    currentPath += folder;
+
+    renderCurrent();
+}
+
+// =====================
+// RENDER CURRENT PATH
+// =====================
+async function renderCurrent(){
+
+    const container = getContainer();
+    container.innerHTML = "";
+    container.className = "folder-list";
+
+    // BACK BUTTON
+    const back = document.createElement("div");
+    back.innerHTML = "⬅ Back";
+    back.style.color = "#00d9ff";
+    back.style.cursor = "pointer";
+    back.style.marginBottom = "10px";
+    back.style.fontSize = "18px";
+
+    back.onclick = () => {
+        let parts = currentPath.split("/").filter(Boolean);
+        parts.pop();
+        currentPath = parts.length ? parts.join("/") + "/" : "";
+        renderCurrent();
+    };
+
+    container.appendChild(back);
+
+    const items = await loadFolder(serverURL + rootFolder + currentPath);
+
+    let hasFiles = false;
+
+    items.forEach(item => {
+
+        const full = currentPath + item;
+
+        if(isFolder(item)){
+            addFolder(container, item);
+        }
+
+        else if(isAudio(item)){
+            hasFiles = true;
+            addFile(container, full, item);
+        }
+    });
+
+    if(!hasFiles && items.length === 0){
+        const empty = document.createElement("div");
+        empty.innerHTML = "📭 Pa gen fichiers";
+        empty.style.opacity = "0.7";
+        container.appendChild(empty);
+    }
+}
+
+// =====================
+// FOLDER CARD
+// =====================
+function addFolder(container, name){
+    const el = document.createElement("div");
+
+    el.className = "music-card";
+    el.innerHTML = "📁 " + name.replace("/", "");
+    el.style.fontSize = "18px";
+
+    el.onclick = () => openFolder(name);
+
+    container.appendChild(el);
+}
+
+// =====================
+// FILE CARD
+// =====================
+function addFile(container, path, name){
+    const el = document.createElement("div");
+
+    el.className = "music-card";
+    el.innerHTML = "🎵 " + decodeURIComponent(name);
+    el.style.fontSize = "16px";
+
+    el.onclick = () => {
+        const player = document.getElementById("player");
+
+        const parts = path.split("/");
+        const filename = encodeURIComponent(parts.pop());
+        const folder = parts.join("/") + "/";
+
+        const finalURL = serverURL + rootFolder + folder + filename;
+
+        player.src = finalURL;
+        player.load();
+        player.play().catch(()=>{});
+    };
+
+    container.appendChild(el);
+}
+
+// =====================
+// START
+// =====================
+showRoot();
+
 </script>
 
 </body>

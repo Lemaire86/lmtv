@@ -1,17 +1,12 @@
-/* ===========================
-   RESET
-=========================== */
+/* RESET */
 body {
     margin: 0;
     font-family: Arial, sans-serif;
     color: white;
     overflow-x: hidden;
-    background: #050716;
 }
 
-/* ===========================
-   BACKGROUND VIDEO (HOME ONLY)
-=========================== */
+/* BACKGROUND VIDEO */
 #bg-video {
     position: fixed;
     top: 0;
@@ -22,6 +17,7 @@ body {
     z-index: -2;
 }
 
+/* DARK OVERLAY */
 .overlay {
     position: fixed;
     top: 0;
@@ -84,18 +80,36 @@ body {
     background: transparent;
 }
 
-.header .logo {
-    height: 95px;
-    width: auto;
+/* HEADER */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
 }
 
-/* ===========================
-   HERO (HOME)
-=========================== */
+.logo {
+    height: 70px;
+}
+
+/* MENU */
+nav a {
+    color: white;
+    margin-left: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+nav a:hover {
+    color: #00ffea;
+    text-shadow: 0 0 10px #00ffea;
+}
+
+/* HERO */
 .hero {
     text-align: center;
-    padding-top: 300px;
-    padding-bottom: 100px;
+    padding: 150px 20px;
     animation: fadeIn 1.5s ease;
 }
 
@@ -111,15 +125,7 @@ body {
     opacity: 0.9;
 }
 
-.tagline {
-    margin-top: 5px;
-    font-size: 18px;
-    opacity: 0.8;
-}
-
-/* ===========================
-   BUTTONS
-=========================== */
+/* BUTTONS */
 .btn-group {
     margin-top: 30px;
 }
@@ -153,9 +159,7 @@ body {
     background: rgba(255,255,255,0.15);
 }
 
-/* ===========================
-   LIVE SECTION
-=========================== */
+/* LIVE SECTION */
 .live-section {
     text-align: center;
     padding: 60px 20px;
@@ -178,165 +182,7 @@ body {
     margin-bottom: 15px;
 }
 
-/* ===========================
-   LIVE TV PAGE FIXES
-=========================== */
-
-/* Ajoute espas anba navbar la */
-.section-header {
-    margin-top: 120px;
-    text-align: center;
-}
-
-/* Filtre yo byen ranje */
-.filter-bar {
-    display: flex;
-    gap: 10px;
-    margin: 20px;
-}
-
-/* Player container */
-#player {
-    width: 90%;
-    margin: 0 auto;
-    display: block;
-    max-height: 420px;
-    border-radius: 12px;
-    background: black;
-}
-
-#playerContainer {
-    position: relative;
-    width: 100%;
-    max-height: 450px;
-    margin-bottom: 25px;
-}
-
-.control-bar {
-    width: 100%;
-    background: rgba(0,0,0,0.55);
-    border-top: 1px solid #00d9ff;
-    padding: 10px;
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    backdrop-filter: blur(6px);
-    border-radius: 0 0 12px 12px;
-}
-
-.ctrl-btn {
-    width: 55px;
-    height: 55px;
-    border-radius: 50%;
-    background: rgba(0,0,0,0.55);
-    border: 1px solid #00d9ff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: 0.25s;
-    color: white;
-    font-size: 22px;
-}
-
-.ctrl-btn:hover {
-    transform: scale(1.15);
-    box-shadow: 0 0 15px #00d9ff;
-}
-
-.ctrl-btn.small {
-    width: 45px;
-    height: 45px;
-    font-size: 18px;
-}
-
-/* Bouton NEXT / PREV */
-.player-controls {
-    display: flex;
-    justify-content: space-between;
-    width: 90%;
-    margin: 10px auto 30px auto;
-}
-
-/* Kategori yo an kolonn */
-#categoryView {
-    margin: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-/* Chak kategori */
-.category-item {
-    background: #11152b;
-    padding: 15px;
-    border-radius: 10px;
-    border: 1px solid #2b2c7f;
-    cursor: pointer;
-    transition: 0.3s;
-    font-size: 18px;
-}
-
-.category-item:hover {
-    background: #1a1f3d;
-    box-shadow: 0 0 12px #00d9ff;
-    transform: scale(1.02);
-}
-
-/* View chèn yo */
-#channelView {
-    margin: 20px;
-}
-
-/* Grid chèn yo */
-#channelGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 15px;
-}
-
-/* Chak chèn */
-.channel-card {
-    background: #11152b;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #2b2c7f;
-    cursor: pointer;
-    transition: 0.3s;
-    text-align: center;
-}
-
-.channel-card:hover {
-    background: #1a1f3d;
-    box-shadow: 0 0 15px #00d9ff;
-    transform: scale(1.05);
-}
-
-/* Logo chèn yo */
-.channel-logo {
-    width: 100%;
-    height: 90px;
-    object-fit: contain;
-    background: black;
-    border-radius: 8px;
-}
-
-/* Tit kategori */
-#selectedCategoryTitle {
-    font-size: 26px;
-    margin-bottom: 20px;
-    color: #00d9ff;
-    text-shadow: 0 0 10px #00d9ff;
-}
-
-/* Bouton Back */
-#btnBackCat {
-    margin-bottom: 15px;
-}
-
-/* ===========================
-   SHOWS CAROUSEL
-=========================== */
+/* SHOWS */
 .shows {
     padding: 60px 40px;
 }
@@ -367,12 +213,20 @@ body {
     box-shadow: 0 0 20px #a64dff;
 }
 
-/* ===========================
-   FOOTER
-=========================== */
+/* FOOTER */
 .footer {
     text-align: center;
-    padding: 40px 20px;
-    opacity: 0.7;
-    font-size: 14px;
+    padding: 30px;
+    margin-top: 40px;
+}
+
+.logo-small {
+    height: 50px;
+    margin-bottom: 10px;
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
 }

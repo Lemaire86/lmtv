@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LMTV - Movies</title>
-
-<link rel="stylesheet" href="style.css">
+<title>LMTV - LIVE TV</title>
 
 <style>
 body {
@@ -16,6 +14,34 @@ body {
   display: flex;
   height: 100vh;
   overflow: hidden;
+}
+
+/* NAVBAR */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: #0b1020;
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  z-index: 999;
+  border-bottom: 2px solid #ff006e;
+}
+
+.nav-item {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  transition: 0.3s;
+}
+
+.nav-item:hover {
+  background: #ff006e;
 }
 
 /* HEADER */
@@ -108,34 +134,46 @@ video {
 
 <body>
 
- <!-- NAVBAR (PA MANYEN) -->
+<!-- NAVBAR (PA MANYEN) -->
     <div class="navbar">
         <a class="nav-item" href="index.html">🏠 HOME</a>
         <a class="nav-item" href="movies.html">🎬 MOVIES</a>
         <a class="nav-item" href="videos.html">🎞️ VIDEOS</a>
         <a class="nav-item" href="cartoons.html">🧸 CARTOONS</a>
         <a class="nav-item" href="musics.html">🎵 MUSICS</a>
-        <a class="nav-item" href="adults.html">🔞 ADULTS</a>
     </div>
 
 <!-- SIDEBAR -->
 <div class="sidebar">
-  <h3>Kategori</h3>
 
+  <h3>CATEGORIES</h3>
   <button class="category-btn active" data-category="all">All</button>
   <button class="category-btn" data-category="movies">Movies</button>
-  <button class="category-btn" data-category="sport">Sport</button>
+  <button class="category-btn" data-category="sports">Sports</button>
   <button class="category-btn" data-category="news">News</button>
   <button class="category-btn" data-category="kids">Kids</button>
+  <button class="category-btn" data-category="music">Music</button>
+  <button class="category-btn" data-category="documentary">Documentary</button>
+  <button class="category-btn" data-category="religious">Religious</button>
+  <button class="category-btn" data-category="family">Family</button>
+  <button class="category-btn" data-category="comedy">Comedy</button>
+  <button class="category-btn" data-category="outdoor">Outdoor</button>
+  <button class="category-btn" data-category="relax">Relax</button>
+  <button class="category-btn" data-category="animation">Animation</button>
+  <button class="category-btn" data-category="business">Business</button>
+  <button class="category-btn" data-category="auto">Auto</button>
+  <button class="category-btn" data-category="education">Education</button>
 
   <h3>COUNTRIES</h3>
   <button class="category-btn" data-country="HT">Haiti</button>
   <button class="category-btn" data-country="FR">France</button>
   <button class="category-btn" data-country="US">USA</button>
 
-  <h3>ADULT LIVE TV</h3>
-  <button id="unlock-xxx" class="category-btn">XXX</button>
-  <button id="xxx-btn" class="category-btn" style="display:none;">XXX</button>
+  <h3>LANGUAGES</h3>
+  <button class="category-btn" data-lang="FR">French</button>
+  <button class="category-btn" data-lang="US">English</button>
+  <button class="category-btn" data-lang="ES">Spanish</button>
+
 </div>
 
 <!-- MAIN -->
@@ -156,8 +194,9 @@ video {
 </div>
 
 <script>
+
 /* =========================
-   SOURCES IPTV
+   PLAYLIST SOURCES
 ========================= */
 
 const mainPlaylist = "https://iptv-org.github.io/iptv/index.m3u";
@@ -168,14 +207,21 @@ const countryPlaylists = {
   US: "https://iptv-org.github.io/iptv/countries/us.m3u"
 };
 
+const languagePlaylists = {
+  FR: "https://iptv-org.github.io/iptv/languages/fra.m3u",
+  US: "https://iptv-org.github.io/iptv/languages/eng.m3u",
+  ES: "https://iptv-org.github.io/iptv/languages/spa.m3u"
+};
+
 /* =========================
    DATA
 ========================= */
 let allChannels = [];
-let countryChannels = [];
+let filteredChannels = [];
 
 let currentCategory = "all";
 let currentCountry = null;
+let currentLanguage = null;
 
 /* =========================
    ELEMENTS
@@ -193,7 +239,7 @@ async function fetchText(url){
 }
 
 /* =========================
-   PARSE M3U (FIXED)
+   PARSE M3U
 ========================= */
 function parseM3U(text){
   const lines = text.split("\n");
@@ -223,7 +269,7 @@ function parseM3U(text){
 }
 
 /* =========================
-   LOAD MAIN (ALL + MOVIES etc)
+   LOAD MAIN
 ========================= */
 async function loadMain(){
   const txt = await fetchText(mainPlaylist);
@@ -236,7 +282,16 @@ async function loadMain(){
 ========================= */
 async function loadCountry(code){
   const txt = await fetchText(countryPlaylists[code]);
-  countryChannels = parseM3U(txt);
+  allChannels = parseM3U(txt);
+  render();
+}
+
+/* =========================
+   LOAD LANGUAGE
+========================= */
+async function loadLanguage(code){
+  const txt = await fetchText(languagePlaylists[code]);
+  allChannels = parseM3U(txt);
   render();
 }
 
@@ -250,23 +305,10 @@ function matchCategory(ch){
   const name = ch.name.toLowerCase();
   const group = ch.group;
 
-  if(currentCategory === "movies"){
-    return group.includes("movie") || name.includes("movie");
-  }
-
-  if(currentCategory === "sport"){
-    return group.includes("sport") || name.includes("sport");
-  }
-
-  if(currentCategory === "news"){
-    return group.includes("news") || name.includes("news");
-  }
-
-  if(currentCategory === "kids"){
-    return group.includes("kids") || name.includes("cartoon") || name.includes("kids");
-  }
-
-  return true;
+  return (
+    group.includes(currentCategory) ||
+    name.includes(currentCategory)
+  );
 }
 
 /* =========================
@@ -276,16 +318,14 @@ function render(){
 
   list.innerHTML = "";
 
-  let data = currentCountry ? countryChannels : allChannels;
+  filteredChannels = allChannels.filter(matchCategory);
 
-  let filtered = data.filter(matchCategory);
-
-  if(filtered.length === 0){
+  if(filteredChannels.length === 0){
     list.innerHTML = "<p>No channels found</p>";
     return;
   }
 
-  filtered.forEach(ch => {
+  filteredChannels.forEach(ch => {
     const div = document.createElement("div");
     div.className = "channel-item";
     div.innerHTML = `
@@ -314,18 +354,22 @@ document.querySelectorAll(".category-btn").forEach(btn=>{
 
     const cat = btn.dataset.category;
     const country = btn.dataset.country;
+    const lang = btn.dataset.lang;
 
     document.querySelectorAll(".category-btn").forEach(b=>b.classList.remove("active"));
     btn.classList.add("active");
 
     if(country){
-      currentCountry = country;
       loadCountry(country);
       return;
     }
 
+    if(lang){
+      loadLanguage(lang);
+      return;
+    }
+
     if(cat){
-      currentCountry = null;
       currentCategory = cat;
       render();
     }
